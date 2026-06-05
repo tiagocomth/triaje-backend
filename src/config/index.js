@@ -22,7 +22,11 @@ const config = {
   port: toInt(process.env.PORT, 3000),
 
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    // Comma-separated list of allowed origins; trailing slashes are stripped.
+    origins: (process.env.CORS_ORIGIN || 'http://localhost:5173')
+      .split(',')
+      .map((o) => o.trim().replace(/\/$/, ''))
+      .filter(Boolean),
   },
 
   db: {
