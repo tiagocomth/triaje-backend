@@ -1,6 +1,7 @@
 import AppError from '../utils/AppError.js';
 import { newAnalysisId, newCandidateId } from '../utils/id.js';
 import { getJobOrThrow } from './job.service.js';
+import jobRepo from '../repositories/job.repository.js';
 import { getCvsForAnalysis } from './cv.service.js';
 import * as ai from './ai/index.js';
 import { computeOverall, bandFor, sortCandidates } from './scoring.service.js';
@@ -10,11 +11,23 @@ import analysisRepo from '../repositories/analysis.repository.js';
  * Kick off an analysis. Returns immediately (HTTP 202); the heavy work runs in
  * the background and writes stage/progress to the DB for the client to poll.
  *
+ * `criteria` is optional — when null the job's stored criteria are used.
+ *
  * @returns {{analysisId:string, status:string, totalCandidates:number}}
  */
 export function startAnalysis(jobId, { fileIds, criteria }) {
-  getJobOrThrow(jobId);
+  const job = getJobOrThrow(jobId);
   const cvs = getCvsForAnalysis(jobId, fileIds); // 404 if any missing
+
+  // Fall back to the criteria already saved for this job when not provided.
+  if (!criteria || criteria.length === 0) {
+    criteria = jobRepo.findCriteriaByJobId(jobId);
+    if (!criteria || criteria.length === 0) {
+      throw AppError.badRequest(
+        'No criteria found for this job. Extract and save criteria before running analysis.',
+      );
+    }
+  }
 
   const id = newAnalysisId();
   const createdAt = new Date().toISOString();

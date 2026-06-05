@@ -48,7 +48,8 @@ export async function storeCv(jobId, file) {
     createdAt: new Date().toISOString(),
   });
 
-  return { fileId: id, name: file.originalname, size: file.size, status };
+  // Return both `name` (spec) and `fileName` (frontend expects this field name).
+  return { fileId: id, name: file.originalname, fileName: file.originalname, size: file.size, status };
 }
 
 /** Resolve fileIds to CV rows scoped to the job, or throw 404 if any missing. */

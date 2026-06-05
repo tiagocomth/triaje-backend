@@ -1,7 +1,7 @@
 import AppError from '../utils/AppError.js';
 import { validateCriteriaArray } from './jobs.validator.js';
 
-/** POST /jobs/:jobId/analyze */
+/** POST /jobs/:jobId/analyze — criteria is optional; if absent, caller resolves from DB. */
 export function validateAnalyze(body) {
   const { fileIds } = body ?? {};
   if (!Array.isArray(fileIds) || fileIds.length === 0) {
@@ -10,7 +10,9 @@ export function validateAnalyze(body) {
   if (!fileIds.every((id) => typeof id === 'string' && id.trim())) {
     throw AppError.badRequest('every fileId must be a non-empty string');
   }
-  const criteria = validateCriteriaArray(body?.criteria);
+  const criteria = Array.isArray(body?.criteria) && body.criteria.length > 0
+    ? validateCriteriaArray(body.criteria)
+    : null; // null = resolve from DB in the service
   return { fileIds: fileIds.map((id) => id.trim()), criteria };
 }
 
